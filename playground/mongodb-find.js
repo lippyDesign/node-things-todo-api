@@ -20,9 +20,9 @@ MongoClient.connect('mongodb://localhost:27017/TodoApp', (err, db) => {
   //   })
   //   .catch(err => console.log('unable to fetch todos', err));
 
-  db.collection('Users').find({ name: 'Lena' }).toArray()
-    .then(users => console.log(JSON.stringify(users, null, 2)))
-    .catch(error => console.log('Unable to get users', error));
+  // db.collection('Users').find({ name: 'Lena' }).toArray()
+  //   .then(users => console.log(JSON.stringify(users, null, 2)))
+  //   .catch(error => console.log('Unable to get users', error));
 
   //db.close();
 });
