@@ -18,9 +18,10 @@ const port = process.env.PORT;
 app.use(bodyParser.json());
 
 // POST Todo
-app.post('/todos', (req, res) => {
+app.post('/todos', authenticate, (req, res) => {
   const todo = new Todo({
-    text: req.body.text
+    text: req.body.text,
+    _creator: req.user._id
   });
   todo.save()
     .then(doc => res.send(doc))
@@ -28,8 +29,8 @@ app.post('/todos', (req, res) => {
 });
 
 // Get Todo
-app.get('/todos', (req, res) => {
-  Todo.find()
+app.get('/todos', authenticate, (req, res) => {
+  Todo.find({ _creator: req.user._id})
     .then(todos => {
       res.send({ todos });
     })
@@ -37,10 +38,10 @@ app.get('/todos', (req, res) => {
 });
 
 // Get a particular Todo item
-app.get('/todos/:id', (req, res) => {
+app.get('/todos/:id', authenticate, (req, res) => {
   const { id } = req.params;
   if (!ObjectID.isValid(id)) return res.status(404).send();
-  Todo.findById(id)
+  Todo.findOne({ _id: id, _creator: req.user._id })
     .then(todo => {
       // if id not found
       if (!todo) return res.status(404).send();
@@ -50,10 +51,10 @@ app.get('/todos/:id', (req, res) => {
 })
 
 // DELETE todos/:id
-app.delete('/todos/:id', (req, res) => {
+app.delete('/todos/:id', authenticate, (req, res) => {
   const { id } = req.params;
   if (!ObjectID.isValid(id)) return res.status(404).send();
-  Todo.findByIdAndRemove(id)
+  Todo.findOneAndRemove({ _id: id, _creator: req.user._id })
     .then(todo => {
       if (!todo) return res.status(404).send();
       res.send({ todo });
@@ -62,7 +63,7 @@ app.delete('/todos/:id', (req, res) => {
 });
 
 // Update todo records
-app.patch('/todos/:id', (req, res) => {
+app.patch('/todos/:id', authenticate, (req, res) => {
   const { id } = req.params;
   // undersor's pick method takes an object to pick properties off of
   // and an array of properties we need to pick off
@@ -77,7 +78,7 @@ app.patch('/todos/:id', (req, res) => {
     body.completedAt = null;
   }
 
-  Todo.findByIdAndUpdate(id, { $set: body }, { new: true })
+  Todo.findOneAndUpdate({_id: id, _creator: req.user._id}, { $set: body }, { new: true })
     .then(todo => {
       if (!todo) return res.status(404).send();
       res.send({ todo });
@@ -117,6 +118,12 @@ app.post('/users/login', (req, res) => {
     .catch(e => {
       res.status(400).send();
     })
+});
+
+app.delete('/users/me/token', authenticate, (req, res) => {
+  req.user.removeToken(req.token)
+    .then(() => res.status(200).send())
+    .catch(() => res.status(400).send());
 });
 
 app.listen(port, () => {
